@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.vscode/
+logs/
+runs/
+*.log
+data/
+forensic_logs/
+defense_audit.db

@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBVAP Command Center</title>
+
+    <!-- Tailwind CSS Script -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Extended Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            950: '#070d14',
+                            900: '#0c1521',
+                            850: '#101c2c',
+                            800: '#142336',
+                            700: '#1c314a',
+                            600: '#254162'
+                        },
+                        cyanAccent: '#16b8c8',
+                        emeraldAccent: '#10b981'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Application Global Stylesheet -->
+    <style>
+        body {
+            background-color: #070d14;
+            color: #d1d5db;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .card-panel {
+            background-color: #0c1521;
+            border: 1px solid #142336;
+        }
+
+        .sidebar-item-active {
+            background: linear-gradient(90deg, rgba(20, 35, 54, 0.8) 0%, rgba(20, 35, 54, 0.3) 100%);
+            border-left: 3px solid #16b8c8;
+            color: #ffffff;
+        }
+
+        .pulse-danger {
+            animation: pulseGlow 1s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            from {
+                box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+                border-color: #ef4444;
+            }
+            to {
+                box-shadow: 0 0 2px rgba(239, 68, 68, 0.2);
+                border-color: #7f1d1d;
+            }
+        }
+
+        .pulse-drone {
+            animation: droneGlow 1.2s infinite alternate;
+        }
+
+        @keyframes droneGlow {
+            from {
+                box-shadow: 0 0 14px rgba(22, 184, 200, 0.6);
+                border-color: #16b8c8;
+            }
+            to {
+                box-shadow: 0 0 3px rgba(22, 184, 200, 0.2);
+                border-color: #0e4e59;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #070d14;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1c314a;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #254162;
+        }
+    </style>
+</head>
+<body class="flex h-screen w-screen overflow-hidden select-none">
+
+    <!-- ==================== LEFT SIDEBAR ==================== -->
+    <aside class="w-64 bg-[#070d14] border-r border-navy-800 flex flex-col justify-between p-4 flex-shrink-0">
+        <div>
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3 mb-1 px-2 cursor-pointer" onclick="switchNavTab('command')">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center border border-cyan-500/40 bg-cyan-950/20 text-cyan-400 font-bold text-lg shadow-sm">
+                    🛡️
+                </div>
+                <div>
+                    <h1 class="text-lg font-black tracking-wider text-white">IBVAP</h1>
+                    <p class="text-[9px] font-semibold text-slate-500 tracking-wider">
+                        INTELLIGENT BORDER<br>VIDEO ANALYTICS
+                    </p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="mt-8 space-y-1.5 text-sm font-medium">
+                <button 
+                    type="button" 
+                    id="nav-command" 
+                    onclick="switchNavTab('command')" 
+                    class="w-full sidebar-item-active flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-cyan-300 font-semibold transition"
+                >
+                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                    </svg>
+                    Command Center
+                </button>
+
+                <button 
+                    type="button" 
+                    id="nav-cameras" 
+                    onclick="switchNavTab('cameras')" 
+                    class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    Cameras
+                </button>
+
+                <button 
+                    type="button" 
+                    id="nav-alerts" 
+                    onclick="switchNavTab('alerts')" 
+                    class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    Alerts
+                </button>
+
+                <button 
+                    type="button" 
+                    id="nav-events" 
+                    onclick="switchNavTab('events')" 
+                    class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Events
+                </button>
+
+                <button 
+                    type="button" 
+                    id="nav-analytics" 
+                    onclick="switchNavTab('analytics')" 
+                    class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Analytics
+                </button>
+            </nav>
+        </div>
+
+        <div class="px-2 py-3 border-t border-navy-800 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="text-[11px] font-semibold tracking-wider text-emerald-400 uppercase">
+                ● SYSTEM ONLINE
+            </span>
+        </div>
+    </aside>
+
+    <!-- ==================== MAIN CONTENT AREA ==================== -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto bg-[#070d14] px-8 py-6">
+        
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h2 id="viewTitle" class="text-2xl font-bold text-white tracking-tight">Command Center</h2>
+                <p id="viewSubtitle" class="text-xs text-slate-400 mt-0.5">Border surveillance situational awareness</p>
+            </div>
+            
+            <!-- Top Controls Matrix & QRT Drone Dispatch Trigger -->
+            <div class="flex items-center gap-3">
+                <!-- Tactical QRT Drone Scramble Button -->
+                <button 
+                    type="button" 
+                    id="qrtDroneBtn" 
+                    onclick="triggerQrtDroneDispatch()" 
+                    class="bg-cyan-950 border border-cyan-500/80 hover:bg-cyan-900 text-cyan-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-lg shadow-cyan-950/50 transition"
+                >
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    ⚡ DISPATCH QRT DRONE
+                </button>
+
+                <div class="flex items-center bg-[#0c1521] border border-navy-700 rounded-lg p-1">
+                    <input 
+                        type="text" 
+                        id="officerNameInput" 
+                        class="bg-[#070d14] text-xs text-emerald-300 px-2 py-1 rounded outline-none w-24 uppercase font-bold text-center border border-navy-800 focus:border-cyan-500" 
+                        value="MUKESH" 
+                        placeholder="OFFICER"
+                    >
+                    <button 
+                        type="button" 
+                        onclick="submitEnrollment()" 
+                        class="bg-navy-800 hover:bg-navy-700 text-cyan-400 text-xs font-semibold px-2 py-1 rounded ml-1 transition"
+                    >
+                        📸 ENROLL
+                    </button>
+                </div>
+
+                <button 
+                    type="button" 
+                    id="nightBtn" 
+                    onclick="toggleNight()" 
+                    class="bg-[#0c1521] border border-navy-700 hover:bg-navy-800 text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+                >
+                    🌙 CLAHE
+                </button>
+
+                <button 
+                    type="button" 
+                    id="armBtn" 
+                    onclick="toggleAudio()" 
+                    class="bg-[#0c1521] border border-navy-700 hover:bg-navy-800 text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+                >
+                    🔊 SIREN
+                </button>
+
+                <button 
+                    type="button" 
+                    onclick="window.location.reload()" 
+                    class="bg-[#0c1521] border border-navy-700 hover:bg-navy-800 text-slate-300 text-xs font-semibold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+                >
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== 1. COMMAND CENTER PAGE VIEW ==================== -->
+        <div id="page-command" class="page-view space-y-6">
+            
+            <!-- Metric Counter Cards -->
+            <div class="grid grid-cols-4 gap-4">
+                <div class="card-panel rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">CAMERAS</span>
+                        <h3 id="metricCameras" class="text-2xl font-bold text-white mt-0.5">1</h3>
+                    </div>
+                    <div class="text-slate-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card-panel rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">OBJECT EVENTS</span>
+                        <h3 id="metricEvents" class="text-2xl font-bold text-white mt-0.5">0</h3>
+                    </div>
+                    <div class="text-slate-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card-panel rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">CRITICAL</span>
+                        <h3 id="metricCritical" class="text-2xl font-bold text-red-500 mt-0.5">0</h3>
+                    </div>
+                    <div class="text-red-500/60">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card-panel rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">WARNINGS</span>
+                        <h3 id="metricWarnings" class="text-2xl font-bold text-amber-400 mt-0.5">0</h3>
+                    </div>
+                    <div class="text-amber-500/60">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== QRT DRONE TACTICAL HUD BAR ==================== -->
+            <div id="qrtDroneHudBar" class="card-panel rounded-xl p-3.5 flex items-center justify-between border-cyan-500/30 bg-gradient-to-r from-[#0c1521] via-navy-900 to-[#0c1521]">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-8 h-8 rounded-lg bg-cyan-950 border border-cyan-500/50 flex items-center justify-center text-cyan-300 font-bold text-sm">
+                        🚁
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-white tracking-wide">QRT DRONE SENTINEL</span>
+                            <span id="droneBadgeStatus" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 uppercase">
+                                STANDBY
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">
+                            Unit: <b id="droneUnitId" class="text-cyan-400 font-mono">UAV-GARUDA-09</b> | Target Sector: <b id="droneSector" class="text-amber-300">PERIMETER SECURE</b>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <div class="text-right">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase block">BATTERY LEVEL</span>
+                        <span class="text-xs font-mono font-bold text-emerald-400">⚡ 98%</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase block">INTERCEPT ETA</span>
+                        <span id="droneEtaVal" class="text-xs font-mono font-bold text-cyan-300">00:00s</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button 
+                            type="button" 
+                            onclick="triggerQrtDroneDispatch()" 
+                            class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition"
+                        >
+                            Scramble
+                        </button>
+                        <button 
+                            type="button" 
+                            onclick="abortQrtDroneMission()" 
+                            class="bg-navy-900 border border-red-500/40 hover:bg-red-950 text-red-400 text-xs font-bold px-2.5 py-1.5 rounded-lg transition"
+                        >
+                            Abort
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-bold text-white">Live Surveillance</h3>
+                    <button 
+                        type="button" 
+                        onclick="openAddCameraModal()" 
+                        class="bg-[#0c1521] border border-navy-700 hover:bg-navy-800 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+                    >
+                        + Add Camera
+                    </button>
+                </div>
+                
+                <div id="cameraGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <div class="card-panel rounded-xl p-3 flex items-center justify-between gap-4">
+                <span class="text-xs font-bold text-red-400 whitespace-nowrap">⚙️ Dynamic Virtual Fence Height:</span>
+                <input 
+                    type="range" 
+                    id="boundaryRange" 
+                    min="15" 
+                    max="85" 
+                    value="45" 
+                    oninput="updateLine(this.value)" 
+                    class="w-full accent-cyan-500 cursor-pointer"
+                >
+                <span id="sliderVal" class="text-xs font-mono font-bold text-cyan-400 w-12 text-right">45%</span>
+            </div>
+
+            <div class="grid grid-cols-12 gap-6">
+                <div class="col-span-8 card-panel rounded-xl p-4 flex flex-col">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider">Security Events</h4>
+                        <span class="text-[10px] text-slate-500 font-semibold">Click thumbnail to view full resolution</span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto min-h-[140px] max-h-[180px] space-y-2 pr-1" id="logBody">
+                        <div class="h-full flex items-center justify-center text-xs text-slate-600">
+                            No events recorded yet.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-span-4 card-panel rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-3">AI Capabilities</h4>
+                        <ul class="space-y-2.5 text-xs text-slate-400 font-medium">
+                            <li class="flex items-center gap-2">
+                                <span class="text-cyan-400 font-bold">✓</span> Human detection & ByteTrack tracking
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-cyan-400 font-bold">✓</span> Vehicle classification & ANPR OCR
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-cyan-400 font-bold">✓</span> Virtual fence intrusion & any-part breach
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-cyan-400 font-bold">✓</span> QRT Drone Scramble & Target Interception
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-cyan-400 font-bold">✓</span> Facial Biometrics FRS Whitelisting
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-cyan-400 font-bold">✓</span> Optical Anti-Tampering sentinel
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CAMERAS TAB VIEW -->
+        <div id="page-cameras" class="page-view hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-bold text-white">Configured Perimeter Tactical Cameras</h3>
+                <button 
+                    type="button" 
+                    onclick="openAddCameraModal()" 
+                    class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition"
+                >
+                    + Add Camera
+                </button>
+            </div>
+            
+            <div id="camerasTableView" class="card-panel rounded-xl p-4 overflow-x-auto"></div>
+        </div>
+
+        <!-- 3. ALERTS TAB VIEW -->
+        <div id="page-alerts" class="page-view hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-bold text-red-400">🚨 High-Priority Tactical Threat Sentinel</h3>
+                <span class="text-xs text-slate-400">Filtered: Critical Fence Breaches & Optical Tampering Only</span>
+            </div>
+            <div class="card-panel rounded-xl p-4 space-y-3" id="alertsPageViewList">
+                <div class="text-xs text-slate-600 py-4 text-center">No Active High-Priority Critical Breaches Recorded.</div>
+            </div>
+        </div>
+
+        <!-- 4. EVENTS AUDIT VAULT TAB VIEW -->
+        <div id="page-events" class="page-view hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-bold text-white">💾 Comprehensive Forensic Security Audit Vault</h3>
+                <span class="text-xs text-slate-400">Total Audit Logs: <b id="eventsTotalCount" class="text-cyan-400">0</b></span>
+            </div>
+            <div class="card-panel rounded-xl p-4 space-y-2.5 max-h-[600px] overflow-y-auto" id="eventsPageViewList">
+                <div class="h-full flex items-center justify-center text-xs text-slate-600 py-6">
+                    No historical events archived in vault.
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. ANALYTICS DIAGNOSTIC TAB VIEW -->
+        <div id="page-analytics" class="page-view hidden space-y-6">
+            <div class="grid grid-cols-3 gap-4">
+                <div class="card-panel rounded-xl p-4">
+                    <span class="text-xs text-slate-400 font-bold block mb-1">FPS / INFERENCE LATENCY</span>
+                    <h3 class="text-xl font-bold text-cyan-400">
+                        <span id="anaFps">30</span> FPS / <span id="anaLat">9</span>ms
+                    </h3>
+                </div>
+                <div class="card-panel rounded-xl p-4">
+                    <span class="text-xs text-slate-400 font-bold block mb-1">REAL-TIME THREAT FUSION</span>
+                    <h3 id="anaThreatLevel" class="text-xl font-bold text-emerald-400">CODE GREEN</h3>
+                </div>
+                <div class="card-panel rounded-xl p-4">
+                    <span class="text-xs text-slate-400 font-bold block mb-1">ESTIMATED INTERCEPTION ETA</span>
+                    <h3 id="anaEta" class="text-xl font-bold text-amber-300">N/A</h3>
+                </div>
+            </div>
+
+            <div class="card-panel rounded-xl p-5">
+                <h4 class="text-sm font-bold text-white mb-3">Model & Edge Analytics Pipeline Configuration</h4>
+                <div class="grid grid-cols-2 gap-4 text-xs text-slate-300">
+                    <div class="p-3 bg-navy-950 rounded-lg border border-navy-800">
+                        <span class="text-slate-500 font-bold block">OBJECT DETECTOR</span>
+                        <span class="text-cyan-300 font-semibold">Custom YOLOv8 Military-Grade (Zero Cloud Dependency)</span>
+                    </div>
+                    <div class="p-3 bg-navy-950 rounded-lg border border-navy-800">
+                        <span class="text-slate-500 font-bold block">TRACKER PIPELINE</span>
+                        <span class="text-cyan-300 font-semibold">ByteTrack + Kalman Filter Multi-Object Trajectory</span>
+                    </div>
+                    <div class="p-3 bg-navy-950 rounded-lg border border-navy-800">
+                        <span class="text-slate-500 font-bold block">QRT AIR INTERCEPTOR</span>
+                        <span class="text-cyan-300 font-semibold">Autonomous Hexacopter UAV Vectoring System</span>
+                    </div>
+                    <div class="p-3 bg-navy-950 rounded-lg border border-navy-800">
+                        <span class="text-slate-500 font-bold block">LOW-LIGHT ENGINE</span>
+                        <span class="text-cyan-300 font-semibold">CIELAB L* Channel CLAHE (8x8 Tiles, Clip 5.0)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ==================== HD FORENSIC LIGHTBOX MODAL ==================== -->
+    <div id="snapshotModal" class="hidden fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4 backdrop-blur-md">
+        <div class="relative w-full max-w-4xl bg-[#0c1521] border border-cyan-500/40 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-3 bg-navy-950 border-b border-navy-800 flex justify-between items-center">
+                <div>
+                    <h3 id="snapModalTitle" class="text-sm font-bold text-cyan-300">Forensic Incident Evidence</h3>
+                    <p id="snapModalMeta" class="text-[10px] text-slate-400"></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button 
+                        type="button" 
+                        onclick="triggerQrtDroneDispatch()" 
+                        class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg transition"
+                    >
+                        ⚡ Scramble Drone
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="closeSnapshotModal()" 
+                        class="text-slate-400 hover:text-white bg-navy-900 border border-navy-700 px-2.5 py-1 rounded-lg text-xs font-bold"
+                    >
+                        ✕ CLOSE
+                    </button>
+                </div>
+            </div>
+            <div class="relative bg-black flex items-center justify-center p-2 max-h-[600px]">
+                <img id="snapshotModalImg" src="" class="max-w-full max-h-[560px] object-contain rounded-lg border border-navy-800" alt="Full Forensic Frame">
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FULLSCREEN STREAM VIEW MODAL ==================== -->
+    <div id="fullscreenModal" class="hidden fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="relative w-full max-w-5xl bg-[#0c1521] border border-navy-700 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-3 bg-navy-950 border-b border-navy-800 flex justify-between items-center">
+                <h3 id="modalCamTitle" class="text-sm font-bold text-white">Full-Screen Tactical Feed</h3>
+                <button 
+                    type="button" 
+                    onclick="closeFullscreen()" 
+                    class="text-slate-400 hover:text-white bg-navy-900 border border-navy-700 px-2.5 py-1 rounded-lg text-xs font-bold"
+                >
+                    ✕ CLOSE
+                </button>
+            </div>
+            <div class="relative bg-black h-[550px] flex items-center justify-center">
+                <img id="modalVideoFeed" src="" class="w-full h-full object-contain" alt="Fullscreen Feed">
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ADD CAMERA CONFIGURATION MODAL ==================== -->
+    <div id="addCamModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#0c1521] border border-navy-700 rounded-xl p-5 w-full max-w-md shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-white">+ Add New Surveillance Camera</h3>
+                <button type="button" onclick="closeAddCameraModal()" class="text-slate-400 hover:text-white text-xs">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Camera Name</label>
+                    <input 
+                        type="text" 
+                        id="newCamName" 
+                        placeholder="e.g. Mobile DroidCam Feed" 
+                        class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    >
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Location / Sector</label>
+                    <input 
+                        type="text" 
+                        id="newCamLoc" 
+                        placeholder="e.g. Sector B - Forward Gate" 
+                        class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    >
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Source (0, 1 or RTSP/HTTP DroidCam URL)</label>
+                    <input 
+                        type="text" 
+                        id="newCamSrc" 
+                        placeholder="0 or http://192.168.43.1:4747/video" 
+                        class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-cyan-500"
+                    >
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-5">
+                <button 
+                    type="button" 
+                    onclick="closeAddCameraModal()" 
+                    class="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+                >
+                    Cancel
+                </button>
+                <button 
+                    type="button" 
+                    onclick="confirmAddCamera()" 
+                    class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition"
+                >
+                    Add Camera
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== DASHBOARD JAVASCRIPT LOGIC ==================== -->
+    <script>
+        let audioCtx = null;
+        let isMuted = false;
+        let nightState = false;
+        let lastVoiceAlertTime = 0;
+        let localCameras = [];
+        let activeStreamsState = {};
+        let currentRecordCache = {};
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+        document.addEventListener('click', initAudio, { once: true });
+
+        function switchNavTab(tab) {
+            const tabs = ['command', 'cameras', 'alerts', 'events', 'analytics'];
+            tabs.forEach(t => {
+                const navBtn = document.getElementById(`nav-${t}`);
+                const pageEl = document.getElementById(`page-${t}`);
+                if (t === tab) {
+                    navBtn.className = "w-full sidebar-item-active flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-cyan-300 font-semibold transition";
+                    pageEl.classList.remove('hidden');
+                } else {
+                    navBtn.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition";
+                    pageEl.classList.add('hidden');
+                }
+            });
+
+            const titleMap = {
+                'command': ['Command Center', 'Border surveillance situational awareness'],
+                'cameras': ['Tactical Camera Matrix', 'Multi-Stream Ingestion & Management'],
+                'alerts': ['Threat Alert Sentinel', 'Critical Perimeter Infiltration Alerts'],
+                'events': ['Forensic Security Audit Vault', 'Comprehensive HITL forensic records'],
+                'analytics': ['Edge AI Analytics Suite', 'Real-time telemetry, tracking & metrics']
+            };
+            document.getElementById('viewTitle').innerText = titleMap[tab][0];
+            document.getElementById('viewSubtitle').innerText = titleMap[tab][1];
+        }
+
+        // QRT Drone Mission Scramble & Abort Triggers
+        function triggerQrtDroneDispatch(sector = "Sector Infiltration Post") {
+            initAudio();
+            fetch('/api/drone/scramble', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sector: sector, mode: "INTERCEPT" })
+            })
+            .then(r => r.json())
+            .then(res => {
+                speakAlert("QRT Drone Garuda dispatched for tactical perimeter interception!");
+            });
+        }
+
+        function abortQrtDroneMission() {
+            fetch('/api/drone/abort', { method: 'POST' })
+                .then(r => r.json())
+                .then(() => {
+                    speakAlert("QRT Drone returning to base.");
+                });
+        }
+
+        function toggleAudio() {
+            initAudio();
+            isMuted = !isMuted;
+            const armBtn = document.getElementById('armBtn');
+            armBtn.innerText = isMuted ? "🔇 MUTED" : "🔊 SIREN";
+            armBtn.className = isMuted 
+                ? "bg-navy-800 text-slate-500 text-xs font-semibold px-3 py-1.5 rounded-lg border border-navy-700" 
+                : "bg-[#0c1521] border border-navy-700 hover:bg-navy-800 text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-lg";
+        }
+
+        function toggleNight() {
+            nightState = !nightState;
+            const btn = document.getElementById('nightBtn');
+            btn.innerText = nightState ? "🌙 CLAHE: ON" : "🌙 CLAHE";
+            btn.className = nightState 
+                ? "bg-cyan-900/60 border border-cyan-500 text-cyan-300 text-xs font-semibold px-3 py-1.5 rounded-lg" 
+                : "bg-[#0c1521] border border-navy-700 hover:bg-navy-800 text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-lg";
+            fetch(`/toggle_night/${nightState}`);
+        }
+
+        function updateLine(val) {
+            document.getElementById('sliderVal').innerText = `${val}%`;
+            fetch(`/set_line/${val}`);
+        }
+
+        function openFullscreen(camId, camName) {
+            document.getElementById('modalCamTitle').innerText = `${camName} (${camId}) - Live Fullscreen`;
+            document.getElementById('modalVideoFeed').src = `/video_feed/${camId}`;
+            document.getElementById('fullscreenModal').classList.remove('hidden');
+        }
+
+        function closeFullscreen() {
+            document.getElementById('fullscreenModal').classList.add('hidden');
+            document.getElementById('modalVideoFeed').src = "";
+        }
+
+        function openSnapshotLightbox(recId) {
+            const rec = currentRecordCache[recId];
+            if (rec) {
+                document.getElementById('snapModalTitle').innerText = `${rec.type} [${rec.camera_id}]`;
+                document.getElementById('snapModalMeta').innerText = `Timestamp: ${rec.time} | Targets: ${rec.targets} | Status: ${rec.status}`;
+                document.getElementById('snapshotModalImg').src = rec.image;
+                document.getElementById('snapshotModal').classList.remove('hidden');
+            }
+        }
+
+        function closeSnapshotModal() {
+            document.getElementById('snapshotModal').classList.add('hidden');
+            document.getElementById('snapshotModalImg').src = "";
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") {
+                closeFullscreen();
+                closeSnapshotModal();
+                closeAddCameraModal();
+            }
+        });
+
+        function openAddCameraModal() { 
+            document.getElementById('addCamModal').classList.remove('hidden'); 
+        }
+        
+        function closeAddCameraModal() { 
+            document.getElementById('addCamModal').classList.add('hidden'); 
+        }
+
+        function confirmAddCamera() {
+            const name = document.getElementById('newCamName').value.trim();
+            const location = document.getElementById('newCamLoc').value.trim();
+            const source = document.getElementById('newCamSrc').value.trim();
+            if (!name || !source) return alert("Fill Name and Source!");
+
+            fetch('/api/cameras/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, location: location || "General Sector", source })
+            }).then(r => r.json()).then(() => {
+                closeAddCameraModal();
+                document.getElementById('newCamName').value = "";
+                document.getElementById('newCamLoc').value = "";
+                document.getElementById('newCamSrc').value = "";
+            });
+        }
+
+        function deleteCamera(camId) {
+            if (confirm(`Delete ${camId}?`)) {
+                fetch(`/api/cameras/delete/${camId}`, { method: 'DELETE' });
+            }
+        }
+
+        function startStream(camId) {
+            activeStreamsState[camId] = true;
+            renderCameras(localCameras);
+        }
+
+        function stopStream(camId) {
+            activeStreamsState[camId] = false;
+            renderCameras(localCameras);
+        }
+
+        function submitEnrollment() {
+            const name = document.getElementById('officerNameInput').value.trim();
+            if (name) {
+                fetch(`/enroll_officer/${encodeURIComponent(name)}`)
+                    .then(r => r.json())
+                    .then(d => alert(d.message));
+            }
+        }
+
+        function hitlFeedback(recId, action) { 
+            fetch(`/hitl_feedback/${recId}/${action}`); 
+        }
+
+        function playAlarmSound() {
+            if (isMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } catch(e) {}
+        }
+
+        function speakAlert(text) {
+            const now = Date.now();
+            if (now - lastVoiceAlertTime > 4000) {
+                lastVoiceAlertTime = now;
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 1.05;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1.0;
+                    window.speechSynthesis.speak(utterance);
+                }
+            }
+        }
+
+        function renderCameras(cameras) {
+            localCameras = cameras;
+            document.getElementById('metricCameras').innerText = cameras.length;
+            let html = "";
+            let tableHtml = `
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-navy-950 text-slate-400 font-bold border-b border-navy-800">
+                    <tr>
+                        <th class="p-2.5">ID</th>
+                        <th class="p-2.5">Name</th>
+                        <th class="p-2.5">Location</th>
+                        <th class="p-2.5">Source</th>
+                        <th class="p-2.5">Status</th>
+                        <th class="p-2.5">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-navy-800">`;
+
+            cameras.forEach(cam => {
+                if (activeStreamsState[cam.id] === undefined) {
+                    activeStreamsState[cam.id] = true;
+                }
+                const isActive = activeStreamsState[cam.id];
+                const delBtn = cam.id !== "CAM-01" 
+                    ? `<button type="button" onclick="deleteCamera('${cam.id}')" class="text-red-400 text-[11px] ml-2" title="Delete Camera">🗑️</button>` 
+                    : ``;
+
+                tableHtml += `
+                <tr class="hover:bg-navy-900/60 transition">
+                    <td class="p-2.5 text-cyan-400 font-bold">${cam.id}</td>
+                    <td class="p-2.5 text-white font-medium">${cam.name}</td>
+                    <td class="p-2.5 text-slate-400">${cam.location}</td>
+                    <td class="p-2.5 font-mono text-slate-500">${cam.source}</td>
+                    <td class="p-2.5">
+                        <span class="px-2 py-0.5 rounded text-[10px] ${isActive ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-slate-900 text-slate-500'}">
+                            ● ${isActive ? 'ONLINE' : 'OFFLINE'}
+                        </span>
+                    </td>
+                    <td class="p-2.5">${delBtn || '<span class="text-slate-600">LOCKED</span>'}</td>
+                </tr>`;
+
+                html += `
+                <div id="camCard-${cam.id}" class="card-panel rounded-xl overflow-hidden flex flex-col border border-navy-800">
+                    <div class="p-3 border-b border-navy-800 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <div>
+                                <h4 class="text-xs font-bold text-white">${cam.name}</h4>
+                                <p class="text-[10px] text-slate-500">${cam.location}</p>
+                            </div>
+                            ${delBtn}
+                        </div>
+                        <span id="badge-${cam.id}" class="text-[10px] font-semibold ${isActive ? 'text-emerald-400' : 'text-slate-500'} flex items-center gap-1">
+                            ● ${isActive ? 'ONLINE' : 'OFFLINE'}
+                        </span>
+                    </div>
+
+                    <div class="relative bg-black h-48 flex items-center justify-center overflow-hidden">
+                        ${isActive 
+                            ? `<img src="/video_feed/${cam.id}" class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" onclick="openFullscreen('${cam.id}', '${cam.name}')" title="Click for Fullscreen" alt="Stream">` 
+                            : `<div class="text-slate-600 text-[11px] cursor-pointer" onclick="startStream('${cam.id}')">Start stream to view analytics</div>`
+                        }
+                    </div>
+
+                    <div class="p-2.5 bg-navy-950 flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <button 
+                                type="button" 
+                                onclick="startStream('${cam.id}')" 
+                                class="bg-navy-900 border border-navy-700 hover:bg-navy-800 text-slate-300 text-xs px-2.5 py-1 rounded transition"
+                            >
+                                ▷ Start
+                            </button>
+                            <button 
+                                type="button" 
+                                onclick="stopStream('${cam.id}')" 
+                                class="bg-navy-900 border border-navy-700 hover:bg-navy-800 text-slate-400 text-xs px-2.5 py-1 rounded transition"
+                            >
+                                ▢ Stop
+                            </button>
+                        </div>
+                        <span class="text-[10px] text-cyan-400 font-mono font-semibold">${cam.id}</span>
+                    </div>
+                </div>`;
+            });
+
+            tableHtml += `</tbody></table>`;
+            document.getElementById('cameraGrid').innerHTML = html;
+            document.getElementById('camerasTableView').innerHTML = tableHtml;
+        }
+
+        setInterval(() => {
+            fetch('/system_telemetry').then(r => r.json()).then(data => {
+                if (data.camera_registry && JSON.stringify(data.camera_registry) !== JSON.stringify(localCameras)) {
+                    renderCameras(data.camera_registry);
+                }
+
+                document.getElementById('metricEvents').innerText = data.total_events_count;
+                document.getElementById('metricWarnings').innerText = data.warning_count;
+                document.getElementById('eventsTotalCount').innerText = data.total_events_count;
+                document.getElementById('metricCritical').innerText = (data.is_tampered || data.is_breached) ? (data.intruder_count || 1) : 0;
+
+                if (document.getElementById('anaFps')) document.getElementById('anaFps').innerText = data.fps;
+                if (document.getElementById('anaLat')) document.getElementById('anaLat').innerText = data.latency_ms;
+                if (document.getElementById('anaThreatLevel')) document.getElementById('anaThreatLevel').innerText = data.interception_vector.threat_level;
+                if (document.getElementById('anaEta')) document.getElementById('anaEta').innerText = data.interception_vector.eta_bop_seconds;
+
+                // Sync QRT Drone Telemetry HUD
+                if (data.qrt_drone) {
+                    const d = data.qrt_drone;
+                    const badge = document.getElementById('droneBadgeStatus');
+                    const etaEl = document.getElementById('droneEtaVal');
+                    const hudBar = document.getElementById('qrtDroneHudBar');
+
+                    document.getElementById('droneSector').innerText = d.target_sector;
+                    badge.innerText = d.status;
+
+                    if (d.status === "STANDBY") {
+                        badge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 uppercase";
+                        etaEl.innerText = "00:00s";
+                        hudBar.classList.remove('pulse-drone');
+                    } else {
+                        badge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950 text-cyan-300 border border-cyan-500 uppercase animate-pulse";
+                        etaEl.innerText = `${String(Math.floor(d.eta_seconds / 60)).padStart(2, '0')}:${String(d.eta_seconds % 60).padStart(2, '0')}s`;
+                        hudBar.classList.add('pulse-drone');
+                    }
+                }
+
+                if (data.is_tampered) {
+                    playAlarmSound();
+                    speakAlert(`Alert: Optical tampering on sensor ${data.tampered_cam || ''}!`);
+                    const card = document.getElementById(`camCard-${data.tampered_cam}`);
+                    if (card) card.classList.add('pulse-danger');
+                } else if (data.is_breached) {
+                    playAlarmSound();
+                }
+
+                if (data.forensic_records && data.forensic_records.length > 0) {
+                    let logBodyHtml = "";
+                    let allEventsHtml = "";
+                    let alertsHtml = "";
+
+                    data.forensic_records.forEach(r => {
+                        currentRecordCache[r.id] = r;
+
+                        let statusBtn = (r.status === "UNVERIFIED") ? `
+                            <button type="button" class="bg-emerald-600 hover:bg-emerald-500 px-2 py-0.5 rounded text-[10px] text-white font-bold transition" onclick="hitlFeedback(${r.id}, 'confirm')">CONFIRM</button>
+                            <button type="button" class="bg-red-600 hover:bg-red-500 px-2 py-0.5 rounded text-[10px] text-white font-bold ml-1 transition" onclick="hitlFeedback(${r.id}, 'suppress')">FALSE</button>
+                        ` : (r.status === "CONFIRMED_THREAT" 
+                            ? `<span class="text-red-400 font-bold text-[10px]">CONFIRMED</span>` 
+                            : `<span class="text-slate-500 font-bold text-[10px]">SUPPRESSED</span>`
+                        );
+
+                        const cardHtml = `
+                        <div class="flex items-center justify-between bg-navy-950 p-2.5 rounded-lg border border-navy-800 text-xs hover:border-navy-700 transition">
+                            <img 
+                                src="${r.image}" 
+                                class="w-14 h-9 object-cover rounded border border-cyan-500/50 cursor-pointer hover:scale-105 transition" 
+                                onclick="openSnapshotLightbox(${r.id})" 
+                                title="Click to view full photo" 
+                                alt="Snap"
+                            >
+                            <div class="flex-1 px-3 cursor-pointer" onclick="openSnapshotLightbox(${r.id})">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-amber-300 hover:text-amber-200 transition">${r.type}</span>
+                                    <span class="text-[10px] px-1.5 bg-navy-900 border border-cyan-500/40 text-cyan-300 rounded font-mono">${r.camera_id}</span>
+                                </div>
+                                <small class="text-slate-500 text-[10px]">${r.time} | Target: ${r.targets}</small>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="triggerQrtDroneDispatch('${r.camera_id}')" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded text-[10px] font-bold" title="Scramble Drone to this breach">🚁 QRT</button>
+                                ${statusBtn}
+                            </div>
+                        </div>`;
+
+                        allEventsHtml += cardHtml;
+                        logBodyHtml += cardHtml;
+                        
+                        if (r.level === "CODE RED" || r.type.includes("TAMPERING") || r.type.includes("INTRUSION")) {
+                            alertsHtml += cardHtml;
+                        }
+                    });
+
+                    document.getElementById('logBody').innerHTML = logBodyHtml;
+                    document.getElementById('eventsPageViewList').innerHTML = allEventsHtml;
+                    document.getElementById('alertsPageViewList').innerHTML = alertsHtml || `<div class="text-xs text-slate-600 py-4 text-center">No Active High-Priority Critical Breaches Recorded.</div>`;
+                }
+            });
+        }, 200);
+    </script>
+</body>
+</html>
