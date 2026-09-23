@@ -16,7 +16,7 @@
 
 ### 2. Strict "Any-Part" Virtual Tripwire Logic
 
-* Resolves conventional boundary false alarms by enforcing a microsecond bounding box intersection check ($y_1 \le \text{line\_y}$).
+* Resolves conventional boundary false alarms by enforcing a microsecond bounding box intersection check (y1<=line_y).
 
 * Instantly registers an alert if any component of an intruder (head, limb, torso) or vehicle (tyre, bumper) touches or breaches the demarcation threshold.
 
