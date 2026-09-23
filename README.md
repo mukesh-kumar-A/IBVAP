@@ -121,16 +121,20 @@ Open your browser and navigate to **`http://127.0.0.1:8000`** to access the live
 
 ##  Research References
 
-1. **Object Detection**: Redmon et al., *"You Only Look Once: Unified, Real-Time Object Detection"*, [arXiv:1506.02640](https://arxiv.org/abs/1506.02640?utm_source=gemini).
+1. **Object Detection**: Redmon et al., *"You Only Look Once: Unified, Real-Time Object Detection"*, [link](https://arxiv.org/pdf/2408.15857).
 
-2. **Multi-Object Tracking**: Zhang et al., *"ByteTrack: Multi-Object Tracking by Associating Every Detection Box"*, ECCV, [arXiv:2110.06864](https://arxiv.org/abs/2110.06864?utm_source=gemini).
+2. **Multi-Object Tracking**: Zhang et al., *"ByteTrack: Multi-Object Tracking by Associating Every Detection Box"*, ECCV, [link](https://arxiv.org/abs/2110.06864).
 
-3. **Adaptive Contrast Enhancement**: Zuiderveld, K., *"Contrast Limited Adaptive Histogram Equalization"*, Graphics Gems IV, 1994.
+3. **Adaptive Contrast Enhancement**: *"OpenCV: CLAHE Module OpenCV Maintainers(Documentation)"*,
+[link](https://ieeexplore.ieee.org/document/6607556)
 
-4. **Lens Tampering Heuristics**: Pech-Pacheco et al., *"Diatom autofocusing in brightfield microscopy: a comparative study"*, ICPR 2000.
+4. **Edge Face Efficient Recognition Model**: *": Efficient CNNs for Accurate Real-time Face Verification"*, [link](https://arxiv.org/pdf/1804.07573)
 
-5. **Human-in-the-Loop AI**: Wu et al., *"A Survey of Human-in-the-loop for Machine Learning"*, FGCS 2022, [arXiv:2108.00941](https://arxiv.org/abs/2108.00941?utm_source=gemini).
+5. **Lens Tampering Heuristics**: *"IEEE Abstract and Research papers"*, [link](https://ieeexplore.ieee.org/document/6607556)
 
+6. **Human-in-the-Loop AI**: Wu et al., *"A Survey of Human-in-the-loop for Machine Learning"*, FGCS 2022, [link](https://arxiv.org/abs/2108.00941).
+
+7. **ANPR Detection using Deep Learning and OCR**: *"IEEE Research Documentation"*, [link](https://ieeexplore.ieee.org/document/10911385)
 ##  Authors & Team
 
 * **Team Name:** **Non-Patchable-Coders**
