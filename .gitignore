@@ -1,0 +1,38 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+.vscode/
+
+# Python Bytecode and Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Databases & Dynamic Storage
+*.db
+*.sqlite3
+data/*.db
+data/dataset_raw/
+data/dataset_processed/
+
+# Forensic Evidence & Biometric Storage
+forensic_logs/
+known_faces/
+
+# Secrets and Local Configurations
+.env
+
+# Deep Learning Models and Weights
+*.pt
+*.onnx
+models/face/*.onnx
+models/plate/*.pt
+models/yolov8/**/*.pt
+runs/
+
+# Operating System Files
+.DS_Store
+Thumbs.db

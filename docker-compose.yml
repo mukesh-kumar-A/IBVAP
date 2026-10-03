@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  ibvap-edge-node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ibvap_surveillance_node
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./forensic_logs:/app/forensic_logs
+      - ./known_faces:/app/known_faces
+      - ./configs:/app/configs
+      - ./models:/app/models
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DB_PATH=data/defense_audit.db
+      - IBVAP_ADMIN_PASSWORD=${IBVAP_ADMIN_PASSWORD:-}
+      - IBVAP_OPERATOR_PASSWORD=${IBVAP_OPERATOR_PASSWORD:-}
+      - IBVAP_C2_API_KEYS=${IBVAP_C2_API_KEYS:-}
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4096M
+
+  # Optional local MQTT broker for offline military field communication
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: ibvap_mqtt_broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"

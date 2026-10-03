@@ -1,0 +1,59 @@
+system:
+  environment: "production"
+  bop_sector_id: "BOP-WESTERN-SECTOR-04"
+  token_expiry_hours: 12
+
+# Hardware Optimization for Remote Edge / CPU Deployment
+hardware_optimization:
+  frame_skip: 2                # Run deep model every Nth frame (1 = every frame, 2 = every 2nd frame)
+  inference_width: 480         # Scale frame width for YOLO inference (320, 480, 640)
+  inference_height: 360        # Scale frame height for YOLO inference
+  use_onnx_yolo: false         # Set true to load yolov8n.onnx instead of PyTorch .pt
+  onnx_threads: 2              # CPU inference worker thread cap
+
+security:
+  # Leave empty to load from IBVAP_C2_API_KEYS env var, or generate random at startup
+  c2_api_keys: []
+
+alerts:
+  store_and_forward:
+    enabled: true
+    max_queue_size: 5000
+    retry_interval_sec: 10
+    max_retries: 5
+
+  channels:
+    dashboard_sound:
+      enabled: true
+
+    webhook:
+      enabled: false
+      url: "https://c2-border-command.example.gov.in/api/v1/telemetry/events"
+      headers:
+        Content-Type: "application/json"
+        X-Source: "IBVAP-EDGE-NODE"
+      timeout_sec: 3.0
+
+    mqtt:
+      enabled: false
+      broker_host: "localhost"
+      broker_port: 1883
+      topic: "defense/bop/perimeter_alerts"
+      client_id: "IBVAP_SENTINEL_NODE_01"
+      keepalive: 60
+
+    email_smtp:
+      enabled: false
+      smtp_host: "smtp.mailserver.example.mil"
+      smtp_port: 587
+      sender_email: "ibvap-alerts@defense.example.mil"
+      recipient_emails:
+        - "sector-duty-officer@defense.example.mil"
+      use_tls: true
+
+    sms_webhook:
+      enabled: false
+      url: "https://sms-gateway.telecom.example.gov.in/send"
+      phone_numbers:
+        - "+91XXXXXXXXXX"
+      message_template: "ALERT: [TYPE] detected at [LOCATION] ([TIME])"

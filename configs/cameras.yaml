@@ -1,0 +1,15 @@
+cameras:
+- id: CAM-01
+  name: Primary Optical Sensor
+  location: Sector A - Main Perimeter
+  source: '0'
+  mirror: false
+  pixels_per_meter: 40.0
+  status: ONLINE
+- id: CAM-02
+  name: Forward Buffer Sensor
+  location: Sector B - Secondary Strip
+  source: ''
+  mirror: false
+  pixels_per_meter: 40.0
+  status: STANDBY

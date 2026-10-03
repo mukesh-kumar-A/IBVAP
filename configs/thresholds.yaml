@@ -1,0 +1,24 @@
+thresholds:
+  day_night:
+    saturation_threshold: 30.0
+    brightness_threshold: 45.0
+    auto_switch_clahe: true
+  night_motion:
+    min_contour_area_px: 600
+    motion_history_frames: 15
+    min_alert_interval_sec: 3.0
+  suspicious_activities:
+    running_speed_kmh: 9.5
+    group_gathering_min_persons: 3
+    group_gathering_radius_px: 120
+    abandoned_object_min_dwell_sec: 6.0
+    vehicle_halted_max_speed_kmh: 1.5
+    vehicle_halted_min_dwell_sec: 5.0
+    wrong_direction_headings:
+      - "SOUTH (INTRUSION)"
+  recognition:
+    face_match_cosine_threshold: 0.52
+    yunet_score_threshold: 0.65
+    anpr_min_ocr_confidence: 0.35
+    anpr_voting_window_frames: 8
+    anpr_min_votes_confirm: 2

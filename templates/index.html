@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBVAP Sovereign Border Surveillance Command Center</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            950: '#070d14',
+                            900: '#0c1521',
+                            850: '#101c2c',
+                            800: '#142336',
+                            700: '#1c314a',
+                            600: '#254162'
+                        },
+                        cyanAccent: '#16b8c8',
+                        emeraldAccent: '#10b981'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #070d14;
+            color: #d1d5db;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .card-panel {
+            background-color: #0c1521;
+            border: 1px solid #142336;
+        }
+
+        .sidebar-item-active {
+            background: linear-gradient(90deg, rgba(20, 35, 54, 0.8) 0%, rgba(20, 35, 54, 0.3) 100%);
+            border-left: 3px solid #16b8c8;
+            color: #ffffff;
+        }
+
+        .tamper-alarm-flash {
+            animation: tamperFlash 0.5s infinite alternate;
+        }
+
+        @keyframes tamperFlash {
+            from {
+                background-color: rgba(220, 38, 38, 0.95);
+                border-color: #ef4444;
+            }
+            to {
+                background-color: rgba(127, 29, 29, 0.95);
+                border-color: #fca5a5;
+            }
+        }
+
+        #loginOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: radial-gradient(circle at center, #0c1521 0%, #070d14 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+        #loginOverlay.hidden-login {
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+        }
+        .login-box {
+            background: #0c1521;
+            border: 1px solid #16b8c8;
+            box-shadow: 0 0 40px rgba(22, 184, 200, 0.4);
+            border-radius: 16px;
+            padding: 40px;
+            width: 360px;
+            text-align: center;
+            animation: loginFadeIn 0.6s ease;
+        }
+        @keyframes loginFadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .login-input {
+            width: 100%;
+            background: #070d14;
+            border: 1px solid #1c314a;
+            color: #d1d5db;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            outline: none;
+            font-size: 13px;
+        }
+        .login-input:focus { border-color: #16b8c8; }
+        .login-btn {
+            width: 100%;
+            background: #16b8c8;
+            color: #070d14;
+            font-weight: 700;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            transition: opacity 0.2s;
+        }
+        .login-btn:hover { opacity: 0.85; }
+        #loginError {
+            color: #ef4444;
+            font-size: 11px;
+            margin-top: 10px;
+            min-height: 14px;
+        }
+    </style>
+</head>
+<body class="flex h-screen w-screen overflow-hidden select-none">
+
+    <!-- ============ CRITICAL TAMPER ALARM BANNER (VISUAL & AUDITORY) ============ -->
+    <div id="tamperEmergencyBanner" class="hidden fixed top-0 left-0 right-0 z-50 tamper-alarm-flash text-white px-6 py-3 shadow-2xl flex items-center justify-between border-b-2">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl animate-bounce">🚨</span>
+            <div>
+                <h3 class="text-sm font-black tracking-wider uppercase">CRITICAL TAMPER ALERT: SENSOR BLOCKED OR DEFOCUSED!</h3>
+                <p id="tamperBannerDetail" class="text-xs font-semibold text-amber-200">OPTICAL SENSOR COVERED / BLACKOUT DETECTED</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button type="button" onclick="toggleAudioMute()" id="tamperMuteQuickBtn" class="bg-black/50 hover:bg-black/70 text-white text-xs font-bold px-3 py-1.5 rounded border border-white/40">🔇 Silence Alarm</button>
+        </div>
+    </div>
+
+    <!-- ============ LOGIN OVERLAY ============ -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <div style="font-size: 34px; margin-bottom: 8px;">🛰️</div>
+            <h2 class="text-white font-bold text-lg tracking-wide mb-1">IBVAP COMMAND ACCESS</h2>
+            <p class="text-slate-400 text-xs mb-5">Restricted — Sovereign Defense Personnel Only</p>
+
+            <input type="text" id="loginUsername" class="login-input" placeholder="Username (admin / operator)" autocomplete="off">
+            <input type="password" id="loginPassword" class="login-input" placeholder="Password" autocomplete="off">
+
+            <button class="login-btn" onclick="attemptLogin()">🔒 AUTHENTICATE</button>
+            <div id="loginError"></div>
+        </div>
+    </div>
+
+    <!-- ==================== LEFT SIDEBAR ==================== -->
+    <aside class="w-64 bg-[#070d14] border-r border-navy-800 flex flex-col justify-between p-4 flex-shrink-0">
+        <div>
+            <div class="flex items-center gap-3 mb-1 px-2 cursor-pointer" onclick="switchNavTab('command')">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center border border-cyan-500/40 bg-cyan-950/20 text-cyan-400 font-bold text-lg shadow-sm">
+                    🛡️
+                </div>
+                <div>
+                    <h1 class="text-lg font-black tracking-wider text-white">IBVAP</h1>
+                    <p class="text-[9px] font-semibold text-slate-500 tracking-wider">
+                        INTELLIGENT BORDER<br>VIDEO ANALYTICS
+                    </p>
+                </div>
+            </div>
+
+            <!-- Face Engine Status Badge -->
+            <div class="mt-4 px-2">
+                <div id="sidebarFaceBadge" class="p-2 rounded-lg bg-navy-900 border border-navy-700 text-[10px] flex items-center justify-between">
+                    <span class="text-slate-400 font-semibold uppercase">Face Engine:</span>
+                    <span id="faceEngineStatusText" class="font-bold text-cyan-400">PROBING...</span>
+                </div>
+            </div>
+
+            <nav class="mt-6 space-y-1.5 text-sm font-medium">
+                <button type="button" id="nav-command" onclick="switchNavTab('command')" class="w-full sidebar-item-active flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-cyan-300 font-semibold transition">
+                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                    Command Center
+                </button>
+                <button type="button" id="nav-cameras" onclick="switchNavTab('cameras')" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    Cameras
+                </button>
+                <button type="button" id="nav-zones" onclick="switchNavTab('zones')" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                    Zone Editor
+                </button>
+                <button type="button" id="nav-recognition" onclick="switchNavTab('recognition')" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition">
+                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Biometrics & ANPR
+                </button>
+                <button type="button" id="nav-alerts" onclick="switchNavTab('alerts')" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    Alerts
+                </button>
+                <button type="button" id="nav-events" onclick="switchNavTab('events')" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Events
+                </button>
+                <button type="button" id="nav-analytics" onclick="switchNavTab('analytics')" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    Analytics & Diagnostics
+                </button>
+            </nav>
+        </div>
+
+        <div class="px-2 py-3 border-t border-navy-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span id="socketPingDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span id="socketStatusText" class="text-[10px] font-semibold tracking-wider text-emerald-400 uppercase">● LIVE WS PUSH</span>
+            </div>
+            <span class="text-[9px] text-slate-500 font-mono">BOP-WEST-04</span>
+        </div>
+    </aside>
+
+    <!-- ==================== MAIN CONTENT AREA ==================== -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto bg-[#070d14] px-8 py-6">
+        
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h2 id="viewTitle" class="text-2xl font-bold text-white tracking-tight">Command Center</h2>
+                <p id="viewSubtitle" class="text-xs text-slate-400 mt-0.5">Automated Border Threat Identification & Forensic Integrity Hub</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- FEATURE 2: SIREN ON/OFF TOGGLE BUTTON -->
+                <button type="button" id="sirenToggleBtn" onclick="toggleAudioMute()" class="bg-[#0c1521] border border-cyan-500/70 hover:bg-navy-800 text-cyan-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 transition">
+                    <span id="sirenDot" class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span id="sirenLabel">🔊 SIREN: ARMED</span>
+                </button>
+
+                <!-- FEATURE 3: 3-WAY NIGHT VISION TOGGLE (AUTO / ON / OFF) -->
+                <button type="button" id="nightVisionBtn" onclick="cycleNightVisionMode()" class="bg-[#0c1521] border border-navy-700 hover:bg-navy-800 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+                    🌙 <span id="nightVisionLabel">NIGHT: AUTO</span>
+                </button>
+
+                <!-- SIMULATED QRT Drone Scramble -->
+                <button type="button" id="qrtDroneBtn" onclick="triggerQrtDroneDispatch()" class="bg-cyan-950 border border-cyan-500/80 hover:bg-cyan-900 text-cyan-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-lg transition">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    ⚡ DISPATCH QRT DRONE [SIMULATED]
+                </button>
+
+                <div id="roleBadge" class="hidden bg-[#0c1521] border border-navy-700 rounded-lg px-2.5 py-1.5 text-[10px] font-bold tracking-wider text-slate-500">ROLE: —</div>
+                <button type="button" id="logoutBtn" onclick="logout()" class="bg-[#0c1521] border border-red-900/70 hover:bg-red-950 text-red-400 text-xs font-bold px-3 py-1.5 rounded-lg transition">⏻ LOGOUT</button>
+            </div>
+        </div>
+
+        <!-- ==================== 1. COMMAND CENTER ==================== -->
+        <div id="page-command" class="page-view space-y-6">
+            <div class="grid grid-cols-4 gap-4">
+                <div class="card-panel rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">ACTIVE SENSORS</span>
+                        <h3 id="metricCameras" class="text-2xl font-bold text-white mt-0.5">1</h3>
+                    </div>
+                    <div class="text-slate-500">📹</div>
+                </div>
+                <div class="card-panel rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">SECURITY EVENTS</span>
+                        <h3 id="metricEvents" class="text-2xl font-bold text-white mt-0.5">0</h3>
+                    </div>
+                    <div class="text-slate-500">⚡</div>
+                </div>
+                <div class="card-panel rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">CRITICAL INTRUSIONS</span>
+                        <h3 id="metricCritical" class="text-2xl font-bold text-red-500 mt-0.5">0</h3>
+                    </div>
+                    <div class="text-red-500/60">🚨</div>
+                </div>
+                <div class="card-panel rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">WARNINGS / LOITERING</span>
+                        <h3 id="metricWarnings" class="text-2xl font-bold text-amber-400 mt-0.5">0</h3>
+                    </div>
+                    <div class="text-amber-500/60">⚠️</div>
+                </div>
+            </div>
+
+            <!-- FEATURE 5: INTERACTIVE VIRTUAL FENCE BOUNDARY SLIDER -->
+            <div class="card-panel rounded-xl p-4 border-cyan-500/30 flex items-center justify-between bg-gradient-to-r from-[#0c1521] via-navy-900 to-[#0c1521]">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg">📏</span>
+                    <div>
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider">Perimeter Virtual Fence Boundary Tripwire</h4>
+                        <p class="text-[10px] text-slate-400">Slide to dynamically raise or lower the intrusion detection line height across active cameras.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-xs font-mono font-bold text-cyan-400" id="fenceSliderLabel">FENCE POSITION: 45% (Y: 216px)</span>
+                    <input type="range" id="fenceSlider" min="15" max="85" value="45" oninput="handleFenceSliderChange(this.value)" class="w-48 accent-cyan-400 cursor-pointer">
+                </div>
+            </div>
+
+            <!-- QRT Drone HUD clearly displaying SIMULATED -->
+            <div id="qrtDroneHudBar" class="card-panel rounded-xl p-3.5 flex items-center justify-between border-cyan-500/30 bg-gradient-to-r from-[#0c1521] via-navy-900 to-[#0c1521]">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-8 h-8 rounded-lg bg-cyan-950 border border-cyan-500/50 flex items-center justify-center text-cyan-300 font-bold text-sm">
+                        🚁
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-white tracking-wide">QRT DRONE SENTINEL</span>
+                            <span class="text-[9px] px-1.5 py-0.5 bg-amber-950 text-amber-400 border border-amber-800 rounded font-bold uppercase">SIMULATED WORKFLOW</span>
+                            <span id="droneBadgeStatus" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 uppercase">STANDBY</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">
+                            Unit: <b id="droneUnitId" class="text-cyan-400 font-mono">UAV-GARUDA-09 [SIMULATED]</b> | Target: <b id="droneSector" class="text-amber-300">PERIMETER SECURE</b>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="text-right">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase block">INTERCEPT ETA</span>
+                        <span id="droneEtaVal" class="text-xs font-mono font-bold text-cyan-300">00:00s</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="triggerQrtDroneDispatch()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">Scramble (Sim)</button>
+                        <button type="button" onclick="abortQrtDroneMission()" class="bg-navy-900 border border-red-500/40 hover:bg-red-950 text-red-400 text-xs font-bold px-2.5 py-1.5 rounded-lg transition">Abort</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-bold text-white">Live Tactical Surveillance</h3>
+                        <span class="text-[10px] text-slate-500 italic">(Tap or click video feed for Fullscreen)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="speedStatusBadge" class="text-[10px] px-2 py-0.5 rounded bg-navy-900 border border-navy-700 text-slate-400 font-mono">SPEED: UNCALIBRATED</span>
+                        <button type="button" onclick="openAddCameraModal()" class="admin-only hidden bg-[#0c1521] border border-navy-700 hover:bg-navy-800 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition">+ Add Camera</button>
+                    </div>
+                </div>
+                <div id="cameraGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-6">
+                <div class="col-span-8 card-panel rounded-xl p-4 flex flex-col">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider">Cryptographic Forensic Audit Vault</h4>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="exportEventsCsv()" class="bg-navy-900 hover:bg-navy-800 text-cyan-400 border border-navy-700 text-[10px] font-bold px-2 py-1 rounded transition">📥 Export CSV</button>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto min-h-[140px] max-h-[180px] space-y-2 pr-1" id="logBody">
+                        <div class="h-full flex items-center justify-center text-xs text-slate-600">No events recorded yet.</div>
+                    </div>
+                </div>
+
+                <div class="col-span-4 card-panel rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-3">System Integration & Protocol State</h4>
+                        <ul class="space-y-2 text-xs text-slate-400 font-medium">
+                            <li class="flex items-center gap-2"><span class="text-cyan-400 font-bold">✓</span> WebSocket Real-time Telemetry Push</li>
+                            <li class="flex items-center gap-2"><span class="text-cyan-400 font-bold">✓</span> Store-and-Forward Alert Backlog Queue</li>
+                            <li class="flex items-center gap-2"><span class="text-cyan-400 font-bold">✓</span> Optical Anti-Tampering Engine Active</li>
+                            <li class="flex items-center gap-2"><span class="text-cyan-400 font-bold">✓</span> Automatic Night-Vision Light Discriminator</li>
+                            <li class="flex items-center gap-2"><span class="text-cyan-400 font-bold">✓</span> SHA-256 Chained Immutable SQLite Vault</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 2. ZONE EDITOR ==================== -->
+        <div id="page-zones" class="page-view hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-base font-bold text-white">Interactive Virtual Fence & Polygon Zone Editor</h3>
+                    <p class="text-xs text-slate-400">Click points on live camera canvas to configure boundary tripwires and watch sectors.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="zoneCamSelector" onchange="changeZoneEditorCamera()" class="bg-[#0c1521] border border-navy-700 text-xs text-cyan-300 font-bold px-3 py-1.5 rounded-lg outline-none">
+                        <option value="CAM-01">CAM-01</option>
+                    </select>
+                    <button type="button" onclick="saveActiveZones()" class="admin-only hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">💾 Save Zones</button>
+                    <button type="button" onclick="clearDrawnPoints()" class="bg-navy-900 border border-red-500/40 hover:bg-red-950 text-red-400 text-xs font-bold px-3 py-1.5 rounded-lg transition">Clear Draft</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-8 card-panel rounded-xl p-3 flex flex-col items-center">
+                    <div class="relative bg-black rounded-lg overflow-hidden border border-navy-800" style="width: 640px; height: 480px;">
+                        <img id="zoneVideoUnderlay" src="" class="absolute inset-0 w-full h-full object-contain pointer-events-none" alt="Stream">
+                        <canvas id="zoneCanvas" width="640" height="480" class="absolute inset-0 w-full h-full cursor-crosshair" onclick="handleCanvasClick(event)"></canvas>
+                    </div>
+                    <div class="flex items-center justify-between w-full mt-2 px-2 text-[11px] text-slate-400">
+                        <span>Click canvas to add vertices. Min 2 for LINE, min 3 for POLYGON.</span>
+                        <span id="canvasPointsCount" class="font-mono text-cyan-400 font-bold">0 points</span>
+                    </div>
+                </div>
+
+                <div class="col-span-4 card-panel rounded-xl p-4 flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold text-white uppercase tracking-wider">New Zone Configuration</h4>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Zone Name</label>
+                            <input type="text" id="newZoneName" class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500" value="Perimeter Sector">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Classification</label>
+                            <select id="newZoneType" class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-bold outline-none">
+                                <option value="RESTRICTED">RESTRICTED (Critical Intrusion)</option>
+                                <option value="WATCH">WATCH (Loitering Zone)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Geometry Archetype</label>
+                            <select id="newZoneGeom" onchange="redrawCanvas()" class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
+                                <option value="POLYGON">POLYGON (Enclosed Zone Area)</option>
+                                <option value="LINE">LINE (Virtual Tripwire Boundary)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Crossing Direction</label>
+                            <select id="newZoneDir" class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
+                                <option value="ANY">ANY (Both Directions)</option>
+                                <option value="INBOUND">INBOUND (Toward Post)</option>
+                                <option value="OUTBOUND">OUTBOUND (Leaving Perimeter)</option>
+                            </select>
+                        </div>
+                        <button type="button" onclick="commitDrawnZone()" class="admin-only hidden w-full bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold py-2 rounded-lg transition mt-2">+ Add Configured Zone</button>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-navy-800">
+                        <h4 class="text-[11px] font-bold text-slate-400 uppercase mb-2">Committed Zones</h4>
+                        <div id="committedZonesList" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 3. BIOMETRICS & ANPR ==================== -->
+        <div id="page-recognition" class="page-view hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-base font-bold text-white">Biometric Facial Registry & ANPR Plate Watchlist</h3>
+                    <p class="text-xs text-slate-400">Manage Whitelist (Friendly personnel) and Watchlist (Suspect alerts).</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+                <div class="card-panel rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider">👤 Enrolled Facial Identities</h4>
+                            <span class="text-[10px] text-cyan-400 font-mono" id="bioCount">0 Enrolled</span>
+                        </div>
+
+                        <div class="admin-only hidden flex items-center gap-2 mb-3 bg-navy-950 p-2 rounded-lg border border-navy-800">
+                            <input type="text" id="bioInputName" placeholder="SUBJECT NAME" class="bg-[#070d14] border border-navy-800 text-xs text-white px-2.5 py-1.5 rounded outline-none w-36 uppercase font-bold focus:border-cyan-500">
+                            <select id="bioInputCategory" class="bg-[#070d14] border border-navy-800 text-xs text-cyan-300 font-bold px-2 py-1.5 rounded outline-none">
+                                <option value="WHITELIST">WHITELIST (Officer)</option>
+                                <option value="WATCHLIST">WATCHLIST (Suspect)</option>
+                            </select>
+                            <button type="button" onclick="submitEnrolBiometric()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1.5 rounded transition">📸 Enrol Live Snap</button>
+                        </div>
+
+                        <div id="bioFacesList" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
+                    </div>
+                </div>
+
+                <div class="card-panel rounded-xl p-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider">🚘 Stolen / Suspect Plate Watchlist</h4>
+                            <span class="text-[10px] text-amber-400 font-mono" id="plateCount">0 Hotlisted</span>
+                        </div>
+
+                        <div class="admin-only hidden flex items-center gap-2 mb-3 bg-navy-950 p-2 rounded-lg border border-navy-800">
+                            <input type="text" id="plateInputNumber" placeholder="DL01AB1234" class="bg-[#070d14] border border-navy-800 text-xs text-white px-2.5 py-1.5 rounded outline-none w-32 uppercase font-mono font-bold focus:border-cyan-500">
+                            <input type="text" id="plateInputReason" placeholder="Reason (e.g. Stolen Vehicle)" class="bg-[#070d14] border border-navy-800 text-xs text-slate-300 px-2.5 py-1.5 rounded outline-none flex-1 focus:border-cyan-500">
+                            <button type="button" onclick="submitAddPlateWatchlist()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded transition">+ Watchlist</button>
+                        </div>
+
+                        <div id="plateWatchlistTable" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. CAMERAS VIEW -->
+        <div id="page-cameras" class="page-view hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-bold text-white">Configured Perimeter Tactical Cameras</h3>
+                <button type="button" onclick="openAddCameraModal()" class="admin-only hidden bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">+ Add Camera</button>
+            </div>
+            <div id="camerasTableView" class="card-panel rounded-xl p-4 overflow-x-auto"></div>
+        </div>
+
+        <!-- 5. ALERTS VIEW -->
+        <div id="page-alerts" class="page-view hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-bold text-red-400">🚨 High-Priority Threat Sentinel</h3>
+                <span class="text-xs text-slate-400">Filtered: Critical Fence Breaches, Watchlist Suspects & Optical Tampering</span>
+            </div>
+            <div class="card-panel rounded-xl p-4 space-y-3" id="alertsPageViewList">
+                <div class="text-xs text-slate-600 py-4 text-center">No Active High-Priority Critical Breaches Recorded.</div>
+            </div>
+        </div>
+
+        <!-- 6. EVENTS VIEW -->
+        <div id="page-events" class="page-view hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-bold text-white">💾 Tamper-Evident Forensic Audit Vault</h3>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-400">Total Vault Logs: <b id="eventsTotalCount" class="text-cyan-400">0</b></span>
+                    <button id="chainAuditBtn" style="display:none" onclick="verifyChainIntegrity()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-1 rounded transition">🔒 VERIFY CHAIN INTEGRITY</button>
+                    <span id="chainAuditStatus" class="text-[10px] font-bold"></span>
+                </div>
+            </div>
+            <div class="card-panel rounded-xl p-4 space-y-2.5 max-h-[600px] overflow-y-auto" id="eventsPageViewList">
+                <div class="h-full flex items-center justify-center text-xs text-slate-600 py-6">No historical events archived in vault.</div>
+            </div>
+        </div>
+
+        <!-- 7. ANALYTICS DIAGNOSTIC VIEW -->
+        <div id="page-analytics" class="page-view hidden space-y-6">
+            <div class="grid grid-cols-3 gap-4">
+                <div class="card-panel rounded-xl p-4">
+                    <span class="text-xs text-slate-400 font-bold block mb-1">FPS / INFERENCE LATENCY</span>
+                    <h3 class="text-xl font-bold text-cyan-400"><span id="anaFps">0.0</span> FPS / <span id="anaLat">0.0</span>ms</h3>
+                </div>
+                <div class="card-panel rounded-xl p-4">
+                    <span class="text-xs text-slate-400 font-bold block mb-1">REAL-TIME THREAT FUSION</span>
+                    <h3 id="anaThreatLevel" class="text-xl font-bold text-emerald-400">CODE GREEN</h3>
+                </div>
+                <div class="card-panel rounded-xl p-4">
+                    <span class="text-xs text-slate-400 font-bold block mb-1">HARDWARE OPTIMIZATIONS ACTIVE</span>
+                    <div id="anaHwOpt" class="text-xs text-slate-300 font-mono mt-1">FRAME SKIP: 2 | ONNX THREADS: 2</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Lightbox Modal -->
+    <div id="snapshotModal" class="hidden fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4 backdrop-blur-md">
+        <div class="relative w-full max-w-4xl bg-[#0c1521] border border-cyan-500/40 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-3 bg-navy-950 border-b border-navy-800 flex justify-between items-center">
+                <div>
+                    <h3 id="snapModalTitle" class="text-sm font-bold text-cyan-300">Forensic Incident Evidence</h3>
+                    <p id="snapModalMeta" class="text-[10px] text-slate-400"></p>
+                </div>
+                <button type="button" onclick="closeSnapshotModal()" class="text-slate-400 hover:text-white bg-navy-900 border border-navy-700 px-2.5 py-1 rounded-lg text-xs font-bold">✕ CLOSE</button>
+            </div>
+            <div class="relative bg-black flex items-center justify-center p-2 max-h-[600px]">
+                <img id="snapshotModalImg" src="" class="max-w-full max-h-[560px] object-contain rounded-lg border border-navy-800" alt="Evidence">
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Camera Modal -->
+    <div id="addCamModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-[#0c1521] border border-navy-700 rounded-xl p-5 w-full max-w-md shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-white">+ Add Surveillance Camera</h3>
+                <button type="button" onclick="closeAddCameraModal()" class="text-slate-400 hover:text-white text-xs">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Camera Name</label>
+                    <input type="text" id="newCamName" placeholder="Sector Forward Post" class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-cyan-500">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Location / Sector</label>
+                    <input type="text" id="newCamLoc" placeholder="Sector A Gate" class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-cyan-500">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Source (0, 1, video file, or RTSP URL)</label>
+                    <input type="text" id="newCamSrc" placeholder="0 or rtsp://192.168.1.10:554/live" class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-cyan-500">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Calibration (Pixels Per Meter)</label>
+                    <input type="number" id="newCamPpm" placeholder="40.0 (0 = uncalibrated estimate)" class="w-full bg-[#070d14] border border-navy-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-cyan-500" value="40.0">
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <input type="checkbox" id="newCamMirror" class="rounded accent-cyan-500">
+                    <label for="newCamMirror" class="text-xs text-slate-300">Mirror Camera (Horizontal Flip)</label>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-5">
+                <button type="button" onclick="closeAddCameraModal()" class="px-3 py-1.5 text-xs text-slate-400 hover:text-white">Cancel</button>
+                <button type="button" onclick="confirmAddCamera()" class="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition">Add Camera</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        let AUTH_TOKEN = localStorage.getItem('ibvap_token') || "";
+        let AUTH_ROLE = localStorage.getItem('ibvap_role') || "";
+        let localCameras = [];
+        let currentRecordCache = {};
+
+        let activeEditorCamera = "CAM-01";
+        let committedZones = [];
+        let draftPoints = [];
+
+        let wsSocket = null;
+        let wsConnected = false;
+        let pollingInterval = null;
+
+        // ============================================================
+        // 1 & 2. TACTICAL SIREN SYNTHESIZER (WEB AUDIO API)
+        // ============================================================
+        let audioCtx = null;
+        let isMuted = false;
+        let alarmInterval = null;
+        let tamperAlarmPlaying = false;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Initialize audio context on first user click anywhere
+        document.addEventListener('click', () => {
+            getAudioContext();
+        }, { once: true });
+
+        function toggleAudioMute() {
+            getAudioContext();
+            isMuted = !isMuted;
+            const btn = document.getElementById('sirenToggleBtn');
+            const dot = document.getElementById('sirenDot');
+            const lbl = document.getElementById('sirenLabel');
+
+            if (isMuted) {
+                btn.className = "bg-[#0c1521] border border-red-900/70 hover:bg-navy-800 text-red-400 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 transition";
+                dot.className = "w-2 h-2 rounded-full bg-red-500";
+                lbl.innerText = "🔇 SIREN: MUTED";
+                stopTamperSirenSound();
+            } else {
+                btn.className = "bg-[#0c1521] border border-cyan-500/70 hover:bg-navy-800 text-cyan-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 transition";
+                dot.className = "w-2 h-2 rounded-full bg-cyan-400 animate-pulse";
+                lbl.innerText = "🔊 SIREN: ARMED";
+            }
+        }
+
+        function playTacticalBeep(freq = 880, duration = 0.15) {
+            if (isMuted) return;
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = "square";
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+                gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch (e) {
+                // Audio context locked or inactive
+            }
+        }
+
+        function startTamperSirenSound() {
+            if (tamperAlarmPlaying) return;
+            tamperAlarmPlaying = true;
+            let high = true;
+            alarmInterval = setInterval(() => {
+                if (isMuted) return;
+                playTacticalBeep(high ? 960 : 720, 0.14);
+                high = !high;
+            }, 180);
+        }
+
+        function stopTamperSirenSound() {
+            tamperAlarmPlaying = false;
+            if (alarmInterval) {
+                clearInterval(alarmInterval);
+                alarmInterval = null;
+            }
+        }
+
+        // ============================================================
+        // 3. 3-WAY NIGHT VISION MODE TOGGLE (AUTO -> ON -> OFF)
+        // ============================================================
+        let currentNightMode = "AUTO";
+
+        function cycleNightVisionMode() {
+            if (currentNightMode === "AUTO") currentNightMode = "ON";
+            else if (currentNightMode === "ON") currentNightMode = "OFF";
+            else currentNightMode = "AUTO";
+
+            fetch(`/toggle_night/${currentNightMode}`, { headers: getAuthHeaders() })
+                .then(r => r.json())
+                .then(data => {
+                    updateNightButtonUI(data.night_mode);
+                })
+                .catch(() => {});
+        }
+
+        function updateNightButtonUI(mode) {
+            currentNightMode = mode;
+            const lbl = document.getElementById('nightVisionLabel');
+            const btn = document.getElementById('nightVisionBtn');
+
+            if (mode === "ON") {
+                lbl.innerText = "NIGHT: FORCED ON";
+                btn.className = "bg-emerald-950 border border-emerald-500 text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition";
+            } else if (mode === "OFF") {
+                lbl.innerText = "NIGHT: FORCED OFF";
+                btn.className = "bg-navy-950 border border-navy-700 text-slate-400 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition";
+            } else {
+                lbl.innerText = "NIGHT: AUTO";
+                btn.className = "bg-[#0c1521] border border-cyan-500/50 text-cyan-300 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition";
+            }
+        }
+
+        // ============================================================
+        // 4. TAP / CLICK VIDEO STREAM FULLSCREEN HANDLER
+        // ============================================================
+        function toggleStreamFullscreen(containerEl) {
+            getAudioContext();
+            if (!document.fullscreenElement) {
+                if (containerEl.requestFullscreen) {
+                    containerEl.requestFullscreen();
+                } else if (containerEl.webkitRequestFullscreen) {
+                    containerEl.webkitRequestFullscreen();
+                } else if (containerEl.mozRequestFullScreen) {
+                    containerEl.mozRequestFullScreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // ============================================================
+        // 5. ADJUSTABLE VIRTUAL FENCE BOUNDARY SLIDER
+        // ============================================================
+        let fenceDebounceTimer = null;
+
+        function handleFenceSliderChange(val) {
+            const pct = parseInt(val);
+            const targetY = Math.round(480 * (pct / 100.0));
+            document.getElementById('fenceSliderLabel').innerText = `FENCE POSITION: ${pct}% (Y: ${targetY}px)`;
+
+            clearTimeout(fenceDebounceTimer);
+            fenceDebounceTimer = setTimeout(() => {
+                fetch(`/set_line/${pct}`, { headers: getAuthHeaders() })
+                    .then(r => r.json())
+                    .then(res => {
+                        playTacticalBeep(600, 0.08);
+                    })
+                    .catch(() => {});
+            }, 120);
+        }
+
+        // ============================================================
+        // AUTHENTICATION & SESSION MANAGEMENT
+        // ============================================================
+        function getAuthHeaders() {
+            return {
+                'Authorization': `Bearer ${AUTH_TOKEN}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        function attemptLogin() {
+            getAudioContext();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(e => { throw new Error(e.detail || "Authentication Failed"); });
+                return res.json();
+            })
+            .then(data => {
+                AUTH_TOKEN = data.token;
+                AUTH_ROLE = data.role;
+                localStorage.setItem('ibvap_token', AUTH_TOKEN);
+                localStorage.setItem('ibvap_role', AUTH_ROLE);
+                document.getElementById('loginOverlay').classList.add('hidden-login');
+                applyRoleVisibility();
+                initWebSocketPush();
+            })
+            .catch(err => {
+                document.getElementById('loginError').textContent = `❌ ${err.message}`;
+            });
+        }
+
+        function forceRelogin() {
+            AUTH_TOKEN = "";
+            AUTH_ROLE = "";
+            localStorage.removeItem('ibvap_token');
+            localStorage.removeItem('ibvap_role');
+            document.getElementById('loginOverlay').classList.remove('hidden-login');
+            applyRoleVisibility();
+            if (wsSocket) wsSocket.close();
+            stopTamperSirenSound();
+        }
+
+        function logout() { forceRelogin(); }
+
+        function applyRoleVisibility() {
+            const chainBtn = document.getElementById('chainAuditBtn');
+            if (chainBtn) chainBtn.style.display = (AUTH_ROLE === "ADMIN") ? "" : "none";
+
+            const adminEls = document.querySelectorAll('.admin-only');
+            adminEls.forEach(el => {
+                if (AUTH_ROLE === "ADMIN") el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+
+            const badge = document.getElementById('roleBadge');
+            if (badge) {
+                if (AUTH_ROLE) {
+                    badge.classList.remove("hidden");
+                    badge.innerText = `● ${AUTH_ROLE}`;
+                    badge.className = "bg-[#0c1521] border rounded-lg px-2.5 py-1.5 text-[10px] font-bold tracking-wider " +
+                        (AUTH_ROLE === "ADMIN" ? "border-emerald-700 text-emerald-400" : "border-cyan-700 text-cyan-400");
+                } else {
+                    badge.classList.add("hidden");
+                }
+            }
+        }
+
+        function switchNavTab(tab) {
+            getAudioContext();
+            const tabs = ['command', 'cameras', 'zones', 'recognition', 'alerts', 'events', 'analytics'];
+            tabs.forEach(t => {
+                const navBtn = document.getElementById(`nav-${t}`);
+                const pageEl = document.getElementById(`page-${t}`);
+                if (t === tab) {
+                    navBtn.className = "w-full sidebar-item-active flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-cyan-300 font-semibold transition";
+                    pageEl.classList.remove('hidden');
+                } else {
+                    navBtn.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-navy-900 transition";
+                    pageEl.classList.add('hidden');
+                }
+            });
+
+            if (tab === 'zones') {
+                loadZonesForEditor(activeEditorCamera);
+            } else if (tab === 'recognition') {
+                refreshRecognitionData();
+            }
+        }
+
+        // ============================================================
+        // WEBSOCKET TELEMETRY & LIVE STATE DISPATCH
+        // ============================================================
+        function initWebSocketPush() {
+            const loc = window.location;
+            const wsProto = loc.protocol === "https:" ? "wss:" : "ws:";
+            const wsUri = `${wsProto}//${loc.host}/ws/telemetry`;
+
+            try {
+                wsSocket = new WebSocket(wsUri);
+
+                wsSocket.onopen = () => {
+                    wsConnected = true;
+                    document.getElementById('socketPingDot').className = "w-2 h-2 rounded-full bg-emerald-400 animate-ping";
+                    document.getElementById('socketStatusText').innerText = "● LIVE WS PUSH";
+                    document.getElementById('socketStatusText').className = "text-[10px] font-semibold tracking-wider text-emerald-400 uppercase";
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+                    }
+                };
+
+                wsSocket.onmessage = (event) => {
+                    const msg = JSON.parse(event.data);
+                    if (msg.data) {
+                        applyTelemetryUpdate(msg.data);
+                    }
+                };
+
+                wsSocket.onclose = () => {
+                    wsConnected = false;
+                    fallbackToPolling();
+                };
+
+                wsSocket.onerror = () => {
+                    wsConnected = false;
+                    fallbackToPolling();
+                };
+            } catch (err) {
+                fallbackToPolling();
+            }
+        }
+
+        function fallbackToPolling() {
+            document.getElementById('socketPingDot').className = "w-2 h-2 rounded-full bg-amber-400";
+            document.getElementById('socketStatusText').innerText = "● POLLING (WS LOST)";
+            document.getElementById('socketStatusText').className = "text-[10px] font-semibold tracking-wider text-amber-400 uppercase";
+
+            if (!pollingInterval) {
+                pollingInterval = setInterval(() => {
+                    fetch('/system_telemetry')
+                        .then(r => r.json())
+                        .then(data => applyTelemetryUpdate(data))
+                        .catch(() => {});
+                }, 400);
+            }
+        }
+
+        function applyTelemetryUpdate(data) {
+            // Anti-Tamper Engine Detection & Siren Trigger
+            const tamperBanner = document.getElementById('tamperEmergencyBanner');
+            if (data.is_tampered) {
+                tamperBanner.classList.remove('hidden');
+                document.getElementById('tamperBannerDetail').innerText = `${data.tamper_reason} on [${data.tampered_cam || 'CAM-01'}]`;
+                startTamperSirenSound();
+            } else {
+                tamperBanner.classList.add('hidden');
+                stopTamperSirenSound();
+            }
+
+            // Sync Fence Position Slider
+            if (data.boundary_percentage !== undefined && document.activeElement.id !== "fenceSlider") {
+                const s = document.getElementById('fenceSlider');
+                s.value = data.boundary_percentage;
+                const targetY = Math.round(480 * (data.boundary_percentage / 100.0));
+                document.getElementById('fenceSliderLabel').innerText = `FENCE POSITION: ${data.boundary_percentage}% (Y: ${targetY}px)`;
+            }
+
+            // Sync Night Mode Setting
+            if (data.night_mode_setting) {
+                updateNightButtonUI(data.night_mode_setting);
+            }
+
+            // Face Engine Status Badge
+            if (data.face_engine_status) {
+                const badge = document.getElementById('faceEngineStatusText');
+                badge.innerText = data.face_engine_status;
+                badge.className = data.face_engine_status === "ARCFACE" ? "font-bold text-emerald-400" : "font-bold text-amber-400";
+            }
+
+            // Speed Calibration Badge
+            if (data.interception_vector && data.interception_vector.speed_status) {
+                document.getElementById('speedStatusBadge').innerText = `SPEED: ${data.interception_vector.speed_status}`;
+            }
+
+            // Camera Grid Sync
+            if (data.camera_registry && JSON.stringify(data.camera_registry) !== JSON.stringify(localCameras)) {
+                renderCameras(data.camera_registry);
+            }
+
+            // Top Counters
+            document.getElementById('metricEvents').innerText = data.total_events_count;
+            document.getElementById('metricWarnings').innerText = data.warning_count;
+            document.getElementById('eventsTotalCount').innerText = data.total_events_count;
+            document.getElementById('metricCritical').innerText = (data.is_breached || data.is_tampered || data.night_motion_alert) ? (data.intruder_count || 1) : 0;
+
+            if (document.getElementById('anaFps')) document.getElementById('anaFps').innerText = data.fps;
+            if (document.getElementById('anaLat')) document.getElementById('anaLat').innerText = data.latency_ms;
+            if (document.getElementById('anaThreatLevel')) document.getElementById('anaThreatLevel').innerText = data.interception_vector.threat_level;
+
+            if (data.hardware_optimization && document.getElementById('anaHwOpt')) {
+                const hw = data.hardware_optimization;
+                document.getElementById('anaHwOpt').innerText = `SKIP: ${hw.frame_skip} | RES: ${hw.inference_width}x${hw.inference_height} | ONNX THREADS: ${hw.onnx_threads}`;
+            }
+
+            if (data.qrt_drone) {
+                const badge = document.getElementById('droneBadgeStatus');
+                badge.innerText = data.qrt_drone.status;
+                document.getElementById('droneSector').innerText = data.qrt_drone.target_sector;
+                document.getElementById('droneEtaVal').innerText = `${data.qrt_drone.eta_seconds}s`;
+            }
+
+            // Play short audible alert if critical breach detected
+            if (data.is_breached && !data.is_tampered) {
+                playTacticalBeep(880, 0.12);
+            }
+
+            // Vault Records Log
+            if (data.forensic_records && data.forensic_records.length > 0) {
+                let logHtml = "";
+                let allHtml = "";
+                let alertsHtml = "";
+
+                data.forensic_records.forEach(r => {
+                    currentRecordCache[r.id] = r;
+                    const card = `
+                    <div class="flex items-center justify-between bg-navy-950 p-2.5 rounded-lg border border-navy-800 text-xs">
+                        <img src="${r.image}" class="w-14 h-9 object-cover rounded border border-cyan-500/50 cursor-pointer" onclick="openSnapshotLightbox(${r.id})" alt="Evidence">
+                        <div class="flex-1 px-3 cursor-pointer" onclick="openSnapshotLightbox(${r.id})">
+                            <span class="font-bold text-amber-300">${r.type}</span>
+                            <small class="text-slate-500 text-[10px] block">${r.time} | Target: ${r.targets}</small>
+                        </div>
+                    </div>`;
+                    logHtml += card;
+                    allHtml += card;
+                    if (r.level === "CODE RED") alertsHtml += card;
+                });
+
+                document.getElementById('logBody').innerHTML = logHtml;
+                document.getElementById('eventsPageViewList').innerHTML = allHtml;
+                document.getElementById('alertsPageViewList').innerHTML = alertsHtml || `<div class="text-xs text-slate-600 py-4 text-center">No Active High-Priority Critical Breaches.</div>`;
+            }
+        }
+
+        function exportEventsCsv() {
+            window.location.href = `/api/events/export?format=csv&token=${encodeURIComponent(AUTH_TOKEN)}`;
+        }
+
+        // ============================================================
+        // BIOMETRIC & ANPR WATCHLIST
+        // ============================================================
+        function refreshRecognitionData() {
+            fetch(`/api/biometrics/list`, { headers: getAuthHeaders() })
+                .then(r => r.json())
+                .then(data => {
+                    const list = data.faces || [];
+                    document.getElementById('bioCount').innerText = `${list.length} Enrolled`;
+                    let html = "";
+                    list.forEach(f => {
+                        const isOfficer = (f.category === "WHITELIST");
+                        const catColor = isOfficer ? "text-emerald-400 border-emerald-800 bg-emerald-950" : "text-red-400 border-red-800 bg-red-950";
+                        html += `
+                        <div class="flex items-center justify-between bg-navy-950 p-2.5 rounded-lg border border-navy-800 text-xs">
+                            <div>
+                                <span class="font-bold text-white">${f.name}</span>
+                                <span class="text-[9px] px-1.5 py-0.5 ml-1.5 border rounded uppercase font-bold ${catColor}">${f.category}</span>
+                                <small class="text-slate-500 text-[10px] block mt-0.5">Enrolled: ${f.enrolled_at}</small>
+                            </div>
+                            <button type="button" onclick="deleteBiometric('${f.category}', '${f.name}')" class="admin-only hidden text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 rounded bg-navy-900 border border-navy-700">Delete</button>
+                        </div>`;
+                    });
+                    document.getElementById('bioFacesList').innerHTML = html || `<div class="text-xs text-slate-600 text-center py-4">No enrolled biometric records found.</div>`;
+                    applyRoleVisibility();
+                });
+
+            fetch(`/api/anpr/watchlist`, { headers: getAuthHeaders() })
+                .then(r => r.json())
+                .then(data => {
+                    const list = data.watchlist || [];
+                    document.getElementById('plateCount').innerText = `${list.length} Hotlisted`;
+                    let html = "";
+                    list.forEach(p => {
+                        html += `
+                        <div class="flex items-center justify-between bg-navy-950 p-2.5 rounded-lg border border-navy-800 text-xs">
+                            <div>
+                                <span class="font-bold text-cyan-300 font-mono">${p.plate_number}</span>
+                                <span class="text-slate-400 ml-2 text-[11px]">${p.reason}</span>
+                                <small class="text-slate-500 text-[10px] block mt-0.5">Added: ${p.added_at}</small>
+                            </div>
+                            <button type="button" onclick="deletePlateWatchlist('${p.plate_number}')" class="admin-only hidden text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 rounded bg-navy-900 border border-navy-700">Remove</button>
+                        </div>`;
+                    });
+                    document.getElementById('plateWatchlistTable').innerHTML = html || `<div class="text-xs text-slate-600 text-center py-4">No hotlisted plates configured.</div>`;
+                    applyRoleVisibility();
+                });
+        }
+
+        function submitEnrolBiometric() {
+            const name = document.getElementById('bioInputName').value.trim();
+            const category = document.getElementById('bioInputCategory').value;
+            if (!name) return alert("Enter subject name!");
+
+            fetch(`/api/biometrics/enrol`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ name: name, category: category })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.detail) return alert(`⚠️ ${res.detail}`);
+                alert(`✅ ${res.message}`);
+                document.getElementById('bioInputName').value = "";
+                refreshRecognitionData();
+            });
+        }
+
+        function deleteBiometric(category, name) {
+            if (!confirm(`Delete ${name} from ${category}?`)) return;
+            fetch(`/api/biometrics/delete/${category}/${name}`, { method: 'DELETE', headers: getAuthHeaders() })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.detail) return alert(`⚠️ ${res.detail}`);
+                    refreshRecognitionData();
+                });
+        }
+
+        function submitAddPlateWatchlist() {
+            const plate = document.getElementById('plateInputNumber').value.trim();
+            const reason = document.getElementById('plateInputReason').value.trim() || "Suspect Vehicle";
+            if (!plate) return alert("Enter vehicle plate number!");
+
+            fetch(`/api/anpr/watchlist`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ plate_number: plate, reason: reason })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.detail) return alert(`⚠️ ${res.detail}`);
+                document.getElementById('plateInputNumber').value = "";
+                document.getElementById('plateInputReason').value = "";
+                refreshRecognitionData();
+            });
+        }
+
+        function deletePlateWatchlist(plate) {
+            if (!confirm(`Remove plate ${plate} from watchlist?`)) return;
+            fetch(`/api/anpr/watchlist/${plate}`, { method: 'DELETE', headers: getAuthHeaders() })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.detail) return alert(`⚠️ ${res.detail}`);
+                    refreshRecognitionData();
+                });
+        }
+
+        // ============================================================
+        // ZONE CANVAS DRAWING
+        // ============================================================
+        function handleCanvasClick(e) {
+            const canvas = document.getElementById('zoneCanvas');
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.round((e.clientX - rect.left) * scaleX);
+            const y = Math.round((e.clientY - rect.top) * scaleY);
+
+            draftPoints.push([x, y]);
+            document.getElementById('canvasPointsCount').innerText = `${draftPoints.length} points`;
+            redrawCanvas();
+        }
+
+        function clearDrawnPoints() {
+            draftPoints = [];
+            document.getElementById('canvasPointsCount').innerText = `0 points`;
+            redrawCanvas();
+        }
+
+        function redrawCanvas() {
+            const canvas = document.getElementById('zoneCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            committedZones.forEach(z => {
+                const isRestricted = (z.type === "RESTRICTED");
+                ctx.strokeStyle = isRestricted ? "#ef4444" : "#f59e0b";
+                ctx.fillStyle = isRestricted ? "rgba(239, 68, 68, 0.25)" : "rgba(245, 158, 11, 0.2)";
+                ctx.lineWidth = 2;
+
+                const pts = z.coordinates;
+                if (!pts || pts.length < 2) return;
+
+                ctx.beginPath();
+                ctx.moveTo(pts[0][0], pts[0][1]);
+                for (let i = 1; i < pts.length; i++) {
+                    ctx.lineTo(pts[i][0], pts[i][1]);
+                }
+                if (z.geometry_type === "POLYGON") {
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.stroke();
+
+                ctx.font = "11px monospace";
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.fillText(`[${z.type}] ${z.name}`, pts[0][0] + 5, Math.max(15, pts[0][1] - 5));
+            });
+
+            if (draftPoints.length > 0) {
+                ctx.strokeStyle = "#16b8c8";
+                ctx.fillStyle = "rgba(22, 184, 200, 0.3)";
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                ctx.moveTo(draftPoints[0][0], draftPoints[0][1]);
+                for (let i = 1; i < draftPoints.length; i++) {
+                    ctx.lineTo(draftPoints[i][0], draftPoints[i][1]);
+                }
+                const geom = document.getElementById('newZoneGeom').value;
+                if (geom === "POLYGON" && draftPoints.length >= 3) {
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.stroke();
+
+                draftPoints.forEach(p => {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(p[0], p[1], 4, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+        }
+
+        function commitDrawnZone() {
+            const name = document.getElementById('newZoneName').value.trim() || "Perimeter Zone";
+            const type = document.getElementById('newZoneType').value;
+            const geom = document.getElementById('newZoneGeom').value;
+            const dir = document.getElementById('newZoneDir').value;
+
+            if (geom === "LINE" && draftPoints.length < 2) return alert("Line zone requires 2 points!");
+            if (geom === "POLYGON" && draftPoints.length < 3) return alert("Polygon zone requires 3 points!");
+
+            committedZones.push({
+                id: `zone-${Date.now().toString().slice(-6)}`,
+                name: name,
+                type: type,
+                geometry_type: geom,
+                coordinates: [...draftPoints],
+                direction: dir
+            });
+
+            draftPoints = [];
+            document.getElementById('canvasPointsCount').innerText = `0 points`;
+            renderCommittedZonesList();
+            redrawCanvas();
+        }
+
+        function removeCommittedZone(idx) {
+            committedZones.splice(idx, 1);
+            renderCommittedZonesList();
+            redrawCanvas();
+        }
+
+        function renderCommittedZonesList() {
+            let html = "";
+            committedZones.forEach((z, i) => {
+                const color = z.type === "RESTRICTED" ? "text-red-400" : "text-amber-400";
+                html += `
+                <div class="flex items-center justify-between bg-navy-950 p-2 rounded border border-navy-800 text-[10px]">
+                    <div>
+                        <span class="font-bold ${color}">[${z.type}]</span>
+                        <span class="text-white ml-1 font-medium">${z.name}</span>
+                        <span class="text-slate-500 ml-1">(${z.geometry_type}, ${z.direction})</span>
+                    </div>
+                    <button type="button" onclick="removeCommittedZone(${i})" class="text-red-400 font-bold ml-2">✕</button>
+                </div>`;
+            });
+            document.getElementById('committedZonesList').innerHTML = html || `<span class="text-xs text-slate-600">No committed zones.</span>`;
+        }
+
+        function loadZonesForEditor(camId) {
+            fetch(`/api/zones/${camId}`, { headers: getAuthHeaders() })
+                .then(r => r.json())
+                .then(data => {
+                    committedZones = data.zones || [];
+                    document.getElementById('zoneVideoUnderlay').src = `/video_feed/${camId}?token=${encodeURIComponent(AUTH_TOKEN)}`;
+                    renderCommittedZonesList();
+                    redrawCanvas();
+                });
+        }
+
+        function changeZoneEditorCamera() {
+            activeEditorCamera = document.getElementById('zoneCamSelector').value;
+            loadZonesForEditor(activeEditorCamera);
+        }
+
+        function saveActiveZones() {
+            fetch(`/api/zones/${activeEditorCamera}`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ zones: committedZones })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.detail) return alert(`⚠️ ${res.detail}`);
+                alert(`✅ Zones saved successfully!`);
+            });
+        }
+
+        // ============================================================
+        // MODALS & CAMERA STREAM GRID RENDERING
+        // ============================================================
+        function openAddCameraModal() { document.getElementById('addCamModal').classList.remove('hidden'); }
+        function closeAddCameraModal() { document.getElementById('addCamModal').classList.add('hidden'); }
+
+        function confirmAddCamera() {
+            const name = document.getElementById('newCamName').value.trim();
+            const location = document.getElementById('newCamLoc').value.trim();
+            const source = document.getElementById('newCamSrc').value.trim();
+            const ppm = parseFloat(document.getElementById('newCamPpm').value) || 0.0;
+            const mirror = document.getElementById('newCamMirror').checked;
+
+            fetch(`/api/cameras/add`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ name, location: location || "General Sector", source, mirror, pixels_per_meter: ppm })
+            }).then(r => r.json()).then(res => {
+                if (res.detail) return alert(`⚠️ ${res.detail}`);
+                closeAddCameraModal();
+            });
+        }
+
+        function triggerQrtDroneDispatch() {
+            fetch(`/api/drone/scramble`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ sector: "Sector A Intrusion", mode: "INTERCEPT" })
+            });
+        }
+
+        function abortQrtDroneMission() {
+            fetch(`/api/drone/abort`, { method: 'POST', headers: getAuthHeaders() });
+        }
+
+        function openSnapshotLightbox(recId) {
+            const rec = currentRecordCache[recId];
+            if (rec) {
+                document.getElementById('snapModalTitle').innerText = `${rec.type} [${rec.camera_id}]`;
+                document.getElementById('snapModalMeta').innerText = `Timestamp: ${rec.time} | Target: ${rec.targets}`;
+                document.getElementById('snapshotModalImg').src = rec.image;
+                document.getElementById('snapshotModal').classList.remove('hidden');
+            }
+        }
+
+        function closeSnapshotModal() { document.getElementById('snapshotModal').classList.add('hidden'); }
+
+        function verifyChainIntegrity() {
+            const statusEl = document.getElementById('chainAuditStatus');
+            statusEl.innerText = "AUDITING…";
+            statusEl.className = "text-[10px] font-bold text-cyan-400";
+            fetch(`/api/verify_forensic_chain`, { headers: getAuthHeaders() })
+                .then(r => r.json())
+                .then(d => {
+                    statusEl.innerText = d.chain_intact ? "✅ CHAIN INTACT" : "🚨 TAMPERING DETECTED";
+                    statusEl.className = d.chain_intact ? "text-[10px] font-bold text-emerald-400" : "text-[10px] font-bold text-red-400";
+                });
+        }
+
+        function renderCameras(cameras) {
+            localCameras = cameras;
+            document.getElementById('metricCameras').innerText = cameras.length;
+            let html = "";
+            let selOptions = "";
+
+            cameras.forEach(cam => {
+                selOptions += `<option value="${cam.id}">${cam.id} - ${cam.name}</option>`;
+                const statusColor = cam.status === "ONLINE" ? "text-emerald-400" : "text-amber-400";
+                html += `
+                <div class="card-panel rounded-xl overflow-hidden flex flex-col border border-navy-800 shadow-md transition hover:border-cyan-500/40">
+                    <div class="p-3 border-b border-navy-800 flex justify-between items-center bg-navy-950">
+                        <div>
+                            <h4 class="text-xs font-bold text-white">${cam.name}</h4>
+                            <p class="text-[10px] text-slate-500">${cam.location} (${cam.pixels_per_meter > 0 ? cam.pixels_per_meter + ' px/m' : 'Uncalibrated'})</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-semibold ${statusColor}">● ${cam.status}</span>
+                            <button type="button" onclick="toggleStreamFullscreen(this.closest('.card-panel').querySelector('.stream-container'))" class="text-[10px] px-1.5 py-0.5 bg-navy-900 border border-navy-700 hover:border-cyan-500 rounded text-cyan-300 font-mono" title="Expand Fullscreen">⛶</button>
+                        </div>
+                    </div>
+                    <!-- FEATURE 4: TAP/CLICK FOR FULLSCREEN -->
+                    <div class="stream-container relative bg-black h-48 flex items-center justify-center cursor-pointer group" onclick="toggleStreamFullscreen(this)">
+                        <img src="/video_feed/${cam.id}?token=${encodeURIComponent(AUTH_TOKEN)}" class="w-full h-full object-cover" alt="Stream">
+                        <div class="absolute inset-0 bg-cyan-950/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center pointer-events-none">
+                            <span class="text-xs font-bold text-white bg-black/70 px-2 py-1 rounded border border-white/20">🔍 Tap for Fullscreen</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            document.getElementById('cameraGrid').innerHTML = html;
+            document.getElementById('zoneCamSelector').innerHTML = selOptions;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (AUTH_TOKEN) {
+                fetch(`/api/whoami`, { headers: getAuthHeaders() })
+                    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+                    .then(d => {
+                        AUTH_ROLE = d.role;
+                        document.getElementById('loginOverlay').classList.add('hidden-login');
+                        applyRoleVisibility();
+                        initWebSocketPush();
+                    })
+                    .catch(() => forceRelogin());
+            }
+        });
+    </script>
+</body>
+</html>

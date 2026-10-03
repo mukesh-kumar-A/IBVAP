@@ -1,0 +1,26 @@
+zones:
+  CAM-01:
+  - id: zone-perimeter-fence
+    name: Perimeter Barrier
+    type: RESTRICTED
+    geometry_type: LINE
+    coordinates:
+    - - 0
+      - 408
+    - - 640
+      - 408
+    direction: INBOUND
+  - id: zone-forward-strip
+    name: Forward Buffer Zone
+    type: WATCH
+    geometry_type: POLYGON
+    coordinates:
+    - - 0
+      - 408
+    - - 640
+      - 408
+    - - 640
+      - 470
+    - - 0
+      - 470
+    direction: ANY
